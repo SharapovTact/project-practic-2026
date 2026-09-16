@@ -9,4 +9,5 @@ int main() {
     cout << "Введите второе число: ";
     cin >> num2;
     cout << "Сумма чисел: " << num1 + num2 << endl;
+    return 0;
 }
