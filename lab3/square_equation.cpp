@@ -15,11 +15,11 @@ void CalculateDiscriminant(SquareEquation& context) {
     return;
 }
 
-float calcFirstRoot(const SquareEquation& context) {
+float CalcFirstRoot(const SquareEquation& context) {
     return (-context.b + sqrt(context.D)) / (2.0 * context.a);
 }
 
-float calcSecondRoot(const SquareEquation& context) {
+float CalcSecondRoot(const SquareEquation& context) {
     return (-context.b - sqrt(context.D)) / (2.0 * context.a);
 }
 
@@ -31,11 +31,11 @@ int main() {
     CalculateDiscriminant(equationContext);
 
     if (equationContext.D > 0) {
-        cout << "x1: " << calcFirstRoot(equationContext) << endl;
-        cout << "x2: " << calcSecondRoot(equationContext) << endl;
+        cout << "x1: " << CalcFirstRoot(equationContext) << endl;
+        cout << "x2: " << CalcSecondRoot(equationContext) << endl;
     }
     else if (equationContext.D < 0) {
-        cout << "x: " << calcFirstRoot(equationContext) << endl;
+        cout << "x: " << CalcFirstRoot(equationContext) << endl;
     }
     else {
         cout << "Нет корней" << endl;
