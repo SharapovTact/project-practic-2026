@@ -1,4 +1,5 @@
 #include <SFML/Graphics.hpp>
+#include "character.hpp"
 
 int main()
 {
@@ -8,6 +9,9 @@ int main()
     );
 
     sf::Color bgColor = sf::Color::Green;
+    float deltaTime = 0;
+    Character character;
+    character.setPosition({400.f, 350.f});
 
     while (window.isOpen())
     {
@@ -37,7 +41,10 @@ int main()
             }
         }
 
+        character.update(deltaTime);
         window.clear(bgColor);
+        
+        window.draw(character);
         window.display();
     }
 
