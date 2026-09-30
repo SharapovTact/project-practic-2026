@@ -1,34 +1,23 @@
-#include "character.hpp"
+#include "player.hpp"
+#include "../config.hpp"
 
-constexpr float CHARACTER_WIDTH = 100.f;
-constexpr float CHARACTER_HEIGHT = 140.f;
+constexpr float PLAYER_WIDTH = 100.f;
+constexpr float PLAYER_HEIGHT = 40.f;
 
-constexpr float minX = CHARACTER_WIDTH / 2;
-constexpr float maxX = 800.f - CHARACTER_WIDTH / 2;
-constexpr float minY = CHARACTER_HEIGHT;
-constexpr float maxY = 600.f - 40.f;
+constexpr float minX = PLAYER_WIDTH / 2;
+constexpr float maxX = SCREEN_WIDTH - PLAYER_WIDTH / 2;
+constexpr float minY = PLAYER_HEIGHT / 2;
+constexpr float maxY = SCREEN_HEIGHT - PLAYER_HEIGHT / 2;
 
-Character::Character() 
+Player::Player() 
 {
-    m_body.setSize({100.f, 60.f});
-    m_body.setFillColor(sf::Color(70, 130, 180)); 
-    m_body.setOrigin({50.f, 30.f});
+    m_body.setSize({PLAYER_WIDTH, PLAYER_HEIGHT});
+    m_body.setFillColor(sf::Color(128, 128, 128)); 
+    m_body.setOrigin({PLAYER_WIDTH / 2, PLAYER_HEIGHT / 2});
     m_body.setPosition({0.f, 0.f});
-
-    m_head.setRadius(25.f);
-    m_head.setFillColor(sf::Color(240, 200, 160));
-    m_head.setOrigin({25.f, 25.f});
-    m_head.setPosition({0.f, -55.f});
-
-    m_hat.setPointCount(3);
-    m_hat.setPoint(0, {0.f, -40.f});
-    m_hat.setPoint(1, {-25.f, 30.f});
-    m_hat.setPoint(2, {25.f, 30.f});
-    m_hat.setFillColor(sf::Color(200, 50, 50));
-    m_hat.setPosition({0.f, -100.f});
 }
 
-void Character::Update(float deltaTime)
+void Player::Update(float deltaTime)
 {
     const float speed = 300.f;
     sf::Vector2f movement(0.f, 0.f);
@@ -76,10 +65,8 @@ void Character::Update(float deltaTime)
     setPosition(currentPos);
 }
 
-void Character::draw(sf::RenderTarget& target, sf::RenderStates states) const
+void Player::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     states.transform *= getTransform();
     target.draw(m_body, states);
-    target.draw(m_head, states);
-    target.draw(m_hat, states);
 }

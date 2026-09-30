@@ -1,17 +1,18 @@
 #include <SFML/Graphics.hpp>
-#include "character.hpp"
+#include "src/player/player.hpp"
+#include "src/config.hpp"
 
 int main()
 {
     sf::RenderWindow window(
-        sf::VideoMode({800, 600}),
+        sf::VideoMode({1600, 900}),
         "SFML Test"
     );
 
     sf::Clock clock;
-    sf::Color bgColor = sf::Color::Green;
+    sf::Color bgColor = BACKGROUND_COLOR;
     float deltaTime = 0;
-    Character character;
+    Player character;
     character.setPosition({400.f, 350.f});
 
     while (window.isOpen())
@@ -28,17 +29,6 @@ int main()
                 if (keyPressed->code == sf::Keyboard::Key::Escape)
                 {
                     window.close();
-                }
-                if (keyPressed->code == sf::Keyboard::Key::Space) 
-                {
-                    if (bgColor == sf::Color::Green)
-                    {
-                        bgColor = sf::Color::Blue;
-                    }
-                    else
-                    {
-                        bgColor = sf::Color::Green;
-                    }
                 }
             }
         }
