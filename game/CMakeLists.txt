@@ -11,6 +11,7 @@ add_executable(app
     main.cpp 
     src/config.hpp
     src/player/player.cpp
+    src/player/enemy.cpp
 )
 
 target_link_libraries(app PRIVATE

@@ -1,5 +1,6 @@
 #include <SFML/Graphics.hpp>
 #include "src/player/player.hpp"
+#include "src/player/enemy.hpp"
 #include "src/config.hpp"
 
 int main()
@@ -15,11 +16,19 @@ int main()
     Player character;
     character.setPosition({400.f, 350.f});
 
+    Enemy enemy;
+    enemy.setPosition({500.f, 500.f});
+
+
     while (window.isOpen())
     {
         float deltaTime = clock.restart().asSeconds();
         while (const std::optional event = window.pollEvent())
         {
+            if (character.getGlobalBounds().findIntersection(enemy.getGlobalBounds()))
+            {
+                character.SetColor(sf::Color(255, 255, 0));
+            }
             if (event->is<sf::Event::Closed>())
             {
                 window.close();
@@ -34,10 +43,13 @@ int main()
         }
 
         character.Update(deltaTime);
+        enemy.Update(deltaTime);
         window.clear(bgColor);
         
         window.draw(character);
+        window.draw(enemy);
         window.display();
+        
     }
 
     return 0;
