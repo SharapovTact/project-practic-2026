@@ -25,10 +25,6 @@ int main()
         float deltaTime = clock.restart().asSeconds();
         while (const std::optional event = window.pollEvent())
         {
-            if (character.getGlobalBounds().findIntersection(enemy.getGlobalBounds()))
-            {
-                character.SetColor(sf::Color(255, 255, 0));
-            }
             if (event->is<sf::Event::Closed>())
             {
                 window.close();

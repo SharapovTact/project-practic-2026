@@ -1,37 +1,44 @@
 #include "player.hpp"
 #include "../config.hpp"
+#include <iostream>
 
 constexpr float PLAYER_WIDTH = 100.f;
-constexpr float PLAYER_HEIGHT = 40.f;
-
+constexpr float PLAYER_HEIGHT = 100.f;
 constexpr float minX = PLAYER_WIDTH / 2;
 constexpr float maxX = SCREEN_WIDTH - PLAYER_WIDTH / 2;
 constexpr float minY = PLAYER_HEIGHT / 2;
 constexpr float maxY = SCREEN_HEIGHT - PLAYER_HEIGHT / 2;
 
 Player::Player() 
+    : m_sprite(m_texture)
 {
-    sf::Color m_color = sf::Color(128, 128, 128);
-    m_body.setSize({PLAYER_WIDTH, PLAYER_HEIGHT});
-    m_body.setFillColor(m_color); 
-    m_body.setOrigin({PLAYER_WIDTH / 2, PLAYER_HEIGHT / 2});
-    m_body.setPosition({0.f, 0.f});
-}
+    if (!m_texture.loadFromFile("../../assets/player.png"))
+    {
+        std::cerr << "Error: failed to load texture '../../assets/player.png'\n";
+        return;
+    }
+    m_sprite.setTexture(m_texture, true);
 
-void Player::SetColor(sf::Color newColor) {
-    m_color = newColor;
-    m_body.setFillColor(m_color);
-}
+    const sf::Vector2u texSize = m_texture.getSize();
+    if (texSize.x > 0 && texSize.y > 0)
+    {
+        m_sprite.setOrigin({texSize.x / 2.f, texSize.y / 2.f});
 
+        const float scaleX = PLAYER_WIDTH / static_cast<float>(texSize.x);
+        const float scaleY = PLAYER_HEIGHT / static_cast<float>(texSize.y);
+        m_sprite.setScale({scaleX, scaleY});
+    }
+}
 sf::FloatRect Player::getGlobalBounds() const
 {
-    return getTransform().transformRect(m_body.getGlobalBounds());
+    return getTransform().transformRect(m_sprite.getGlobalBounds());
 }
 
 void Player::Update(float deltaTime)
 {
     const float speed = 300.f;
     sf::Vector2f movement(0.f, 0.f);
+
     if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
     {
@@ -56,22 +63,10 @@ void Player::Update(float deltaTime)
     move(movement);
     sf::Vector2f currentPos = getPosition();
 
-    if (currentPos.x < minX) 
-    {
-        currentPos.x = minX;
-    }
-    if (currentPos.x > maxX) 
-    {
-        currentPos.x = maxX;
-    }
-    if (currentPos.y < minY)
-    {
-        currentPos.y = minY;
-    }
-    if (currentPos.y > maxY) 
-    {
-        currentPos.y = maxY;
-    }
+    if (currentPos.x < minX) currentPos.x = minX;
+    if (currentPos.x > maxX) currentPos.x = maxX;
+    if (currentPos.y < minY) currentPos.y = minY;
+    if (currentPos.y > maxY) currentPos.y = maxY;
 
     setPosition(currentPos);
 }
@@ -79,5 +74,5 @@ void Player::Update(float deltaTime)
 void Player::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     states.transform *= getTransform();
-    target.draw(m_body, states);
+    target.draw(m_sprite, states);
 }
