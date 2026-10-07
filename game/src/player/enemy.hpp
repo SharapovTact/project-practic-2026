@@ -6,7 +6,7 @@ class Enemy : public sf::Drawable, public sf::Transformable
 public: 
     Enemy();
     void Update(float deltaTime);
-    sf::FloatRect getGlobalBounds() const;
+    sf::FloatRect GetGlobalBounds() const;
 
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;

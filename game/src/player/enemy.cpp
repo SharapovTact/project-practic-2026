@@ -19,9 +19,9 @@ Enemy::Enemy()
     m_body.setPosition({0.f, 0.f});
 }
 
-sf::FloatRect Enemy::getGlobalBounds() const
+sf::FloatRect Enemy::GetGlobalBounds() const
 {
-    return getTransform().transformRect(m_body.getGlobalBounds());
+    return getTransform().transformRect(m_body.GetGlobalBounds());
 }
 
 void Enemy::Update(float deltaTime)
