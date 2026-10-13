@@ -4,11 +4,13 @@
 #include <string>
 #include <cmath>
 
+constexpr float PLAYER_SPEED = 100.f;
+constexpr float PLAYER_SHIFT_SPEED = 200.f;
+
 constexpr float PLAYER_WIDTH = 128.f;
 constexpr float PLAYER_HEIGHT = 128.f;
 constexpr float minX = PLAYER_WIDTH / 2;
 constexpr float maxX = SCREEN_WIDTH - PLAYER_WIDTH / 2;
-constexpr float minY = PLAYER_HEIGHT / 2;
 constexpr float maxY = SCREEN_HEIGHT - PLAYER_HEIGHT / 2;
 constexpr int   HORIZONTAL_MOVEMENT_DELAY = 200;
 
@@ -16,7 +18,9 @@ constexpr const char* spritesSrc = "../../assets/player/";
 constexpr const char* rightSpriteName = "right-start.png";
 constexpr const char* upSpriteName = "up-start.png";
 
-Player::Player() : m_sprite(m_textureRight)
+Player::Player() 
+    : m_sprite(m_textureRight), 
+      m_currentState(PlayerState::UnderWater)
 {
     std::string rightPath = std::string(spritesSrc) + rightSpriteName;
     std::string upPath = std::string(spritesSrc) + upSpriteName;
@@ -46,6 +50,16 @@ Player::Player() : m_sprite(m_textureRight)
 sf::FloatRect Player::GetGlobalBounds() const
 {
     return getTransform().transformRect(m_sprite.getGlobalBounds());
+}
+
+void Player::SetState(PlayerState newState)
+{
+    m_currentState = newState;
+}
+
+PlayerState Player::GetState() const
+{
+    return m_currentState;
 }
 
 void Player::SetRightSprite() {
@@ -144,41 +158,34 @@ void NormalizationMovementVector(sf::Vector2f& movement, const float speed, cons
     }
 }
 
-void Player::Update(float deltaTime)
+void Player::UpdateUnderWater(float deltaTime)
 {
-    float speed = 100.f; 
+    float speed = PLAYER_SPEED; 
     sf::Vector2f movement(0.f, 0.f);
 
     bool isShiftPressed = 
-    sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
-    sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
+        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
+        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
 
     if (isShiftPressed) 
     {
-        speed = 200.f; //TODO  вынести в константы
+        speed = PLAYER_SHIFT_SPEED; 
         FastMovement(movement, speed, deltaTime);
     } 
     else 
     {
-        speed = 100.f; 
+        speed = PLAYER_SPEED;
         SlowMovement(movement, speed, deltaTime);
     }
 
-    if (!(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
+    if (!(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
+        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
+        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
     ) {
-        if (m_lastHorizontalPositionIsRight) 
-        {
+        if (m_lastHorizontalPositionIsRight) {
             SetRightSprite();
-        }
-        else 
-        {
+        } else {
             SetLeftSprite();
         }
     }
@@ -186,20 +193,81 @@ void Player::Update(float deltaTime)
     if (m_horizontalMovementBlockTicks != 0) {
         m_horizontalMovementBlockTicks--;
     }
+    
     NormalizationMovementVector(movement, speed, deltaTime);
     move(movement);
+    
     sf::Vector2f currentPos = getPosition();
+    const float surfaceY = SCREEN_HEIGHT * SURFACE_PROPORTION;
 
     if (currentPos.x < minX) currentPos.x = minX;
     if (currentPos.x > maxX) currentPos.x = maxX;
-    if (currentPos.y < minY) currentPos.y = minY;
+    
+    if (currentPos.y < surfaceY) 
+    {
+        currentPos.y = surfaceY;
+        SetState(PlayerState::Surface);
+    }
     if (currentPos.y > maxY) currentPos.y = maxY;
 
     setPosition(currentPos);
 }
 
+void Player::UpdateSurface(float deltaTime)
+{
+    (void)deltaTime; 
+}
+
+void Player::UpdateRelax(float deltaTime)
+{
+    (void)deltaTime; 
+}
+
+void Player::DrawUnderWater(sf::RenderTarget& target, sf::RenderStates states) const
+{
+    target.draw(m_sprite, states);
+}
+
+void Player::DrawSurface(sf::RenderTarget& target, sf::RenderStates states) const
+{
+    target.draw(m_sprite, states);
+}
+
+void Player::DrawRelax(sf::RenderTarget& target, sf::RenderStates states) const
+{
+    target.draw(m_sprite, states);
+}
+
+void Player::Update(float deltaTime)
+{
+    switch (m_currentState)
+    {
+        case PlayerState::UnderWater:
+            UpdateUnderWater(deltaTime);
+            break;
+        case PlayerState::Surface:
+            UpdateSurface(deltaTime);
+            break;
+        case PlayerState::Relax:
+            UpdateRelax(deltaTime);
+            break;
+    }
+}
+
 void Player::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     states.transform *= getTransform();
-    target.draw(m_sprite, states);
+    
+    switch (m_currentState)
+    {
+        case PlayerState::UnderWater:
+            DrawUnderWater(target, states);
+            break;
+        case PlayerState::Surface:
+            DrawSurface(target, states);
+            break;
+        case PlayerState::Relax:
+            DrawRelax(target, states);
+            break;
+    }
 }

@@ -1,26 +1,27 @@
 #include <SFML/Graphics.hpp>
 #include "src/player/player.hpp"
+#include "src/background/background.hpp"
 #include "src/config.hpp"
 
 int main()
 {
-    sf::RenderWindow window(
-        sf::VideoMode({1600, 900}),
-        "SFML Test"
+    sf::Vector2u windowSize(
+        static_cast<unsigned int>(SCREEN_WIDTH),
+        static_cast<unsigned int>(SCREEN_HEIGHT)
     );
 
+    sf::RenderWindow window(sf::VideoMode(windowSize), "SFML Test");
+
     sf::Clock clock;
-    sf::Color bgColor = BACKGROUND_COLOR;
-    float deltaTime = 0;
+    Background background;
     Player character;
-    character.setPosition({400.f, 350.f});
-
-
+    character.setPosition({800.f, 350.f});
 
     while (window.isOpen())
     {
         float deltaTime = clock.restart().asSeconds();
-        while (const std::optional event = window.pollEvent())
+        
+        while (const std::optional<sf::Event> event = window.pollEvent())
         {
             if (event->is<sf::Event::Closed>())
             {
@@ -36,11 +37,13 @@ int main()
         }
 
         character.Update(deltaTime);
-        window.clear(bgColor);
+
+        window.clear(BACKGROUND_COLOR);
         
-        window.draw(character);
+        window.draw(background); 
+        window.draw(character);  
+
         window.display();
-        
     }
 
     return 0;
