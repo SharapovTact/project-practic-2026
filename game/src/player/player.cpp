@@ -17,6 +17,7 @@ constexpr int   HORIZONTAL_MOVEMENT_DELAY = 200;
 constexpr const char* spritesSrc = "../../assets/player/";
 constexpr const char* rightSpriteName = "right-start.png";
 constexpr const char* upSpriteName = "up-start.png";
+constexpr const char* relaxName = "relax.png";
 
 Player::Player() 
     : m_sprite(m_textureRight), 
@@ -24,6 +25,7 @@ Player::Player()
 {
     std::string rightPath = std::string(spritesSrc) + rightSpriteName;
     std::string upPath = std::string(spritesSrc) + upSpriteName;
+    std::string relaxPath = std::string(spritesSrc) + relaxName;
     m_horizontalMovementBlockTicks = 0;
 
     if (!m_textureRight.loadFromFile(rightPath)) {
@@ -31,6 +33,9 @@ Player::Player()
     }
     if (!m_textureUp.loadFromFile(upPath)) {
         std::cerr << "Error: failed to load texture '" << upPath << std::endl;
+    }
+    if (!m_textureRelax.loadFromFile(relaxPath)) {
+        std::cerr << "Error: failed to load texture '" << relaxPath << std::endl;
     }
 
     m_sprite.setTexture(m_textureRight, true);
@@ -198,7 +203,7 @@ void Player::UpdateUnderWater(float deltaTime)
     move(movement);
     
     sf::Vector2f currentPos = getPosition();
-    const float surfaceY = SCREEN_HEIGHT * SURFACE_PROPORTION;
+    const float surfaceY = SCREEN_HEIGHT * SURFACE_PROPORTION + 20; //TODO вынести в конст\а
 
     if (currentPos.x < minX) currentPos.x = minX;
     if (currentPos.x > maxX) currentPos.x = maxX;
@@ -213,32 +218,33 @@ void Player::UpdateUnderWater(float deltaTime)
     setPosition(currentPos);
 }
 
+void Player::SetRelaxSprite() {
+    m_sprite.setTexture(m_textureRelax, true);
+    sf::Vector2f currentScale = m_sprite.getScale();
+    float absScaleX = std::abs(currentScale.x); 
+    m_sprite.setScale({absScaleX, std::abs(currentScale.y)});
+}
+
 void Player::UpdateSurface(float deltaTime)
 {
-    (void)deltaTime; 
+    SetRelaxSprite();
+    bool isShiftPressed = 
+        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
+        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
+    if (isShiftPressed && 
+    (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))) {
+        SetState(PlayerState::UnderWater);
+    }
 }
 
 void Player::UpdateRelax(float deltaTime)
 {
-    (void)deltaTime; 
 }
 
-void Player::DrawUnderWater(sf::RenderTarget& target, sf::RenderStates states) const
-{
-    target.draw(m_sprite, states);
-}
+//TODO Сделать объект с которым будет столкновение, по тайлам
+//TODO Сделать камеру, чтобы она следовала 
 
-void Player::DrawSurface(sf::RenderTarget& target, sf::RenderStates states) const
-{
-    target.draw(m_sprite, states);
-}
-
-void Player::DrawRelax(sf::RenderTarget& target, sf::RenderStates states) const
-{
-    target.draw(m_sprite, states);
-}
-
-void Player::Update(float deltaTime)
+void Player::Update(float deltaTime) //TODO переделать на органичение линии воды по тайлам
 {
     switch (m_currentState)
     {
@@ -257,17 +263,5 @@ void Player::Update(float deltaTime)
 void Player::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
     states.transform *= getTransform();
-    
-    switch (m_currentState)
-    {
-        case PlayerState::UnderWater:
-            DrawUnderWater(target, states);
-            break;
-        case PlayerState::Surface:
-            DrawSurface(target, states);
-            break;
-        case PlayerState::Relax:
-            DrawRelax(target, states);
-            break;
-    }
+    target.draw(m_sprite, states);
 }

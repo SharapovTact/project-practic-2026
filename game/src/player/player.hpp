@@ -15,7 +15,6 @@ public:
     void Update(float deltaTime);
     sf::FloatRect GetGlobalBounds() const;
 
-    // Управление состояниями
     void SetState(PlayerState newState);
     PlayerState GetState() const;
 
@@ -26,10 +25,7 @@ private:
     void UpdateSurface(float deltaTime);
     void UpdateRelax(float deltaTime);
 
-    void DrawUnderWater(sf::RenderTarget& target, sf::RenderStates states) const;
-    void DrawSurface(sf::RenderTarget& target, sf::RenderStates states) const;
-    void DrawRelax(sf::RenderTarget& target, sf::RenderStates states) const;
-
+    void SetRelaxSprite();
     void SetRightSprite();
     void SetLeftSprite();
     void SetUpSprite();
@@ -37,6 +33,7 @@ private:
     void SlowMovement(sf::Vector2f& movement, float speed, float deltaTime);
     void FastMovement(sf::Vector2f& movement, float speed, float deltaTime);
 
+    sf::Texture m_textureRelax;
     sf::Texture m_textureRight;
     sf::Texture m_textureUp;
     sf::Sprite m_sprite;
