@@ -36,7 +36,7 @@ int main()
             }
         }
 
-        character.Update(deltaTime);
+        character.Update(deltaTime, background);
 
         window.clear(BACKGROUND_COLOR);
         

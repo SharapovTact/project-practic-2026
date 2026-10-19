@@ -1,6 +1,9 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
+class Background; 
+enum class TileType;
+
 enum class PlayerState
 {
     UnderWater,
@@ -12,7 +15,7 @@ class Player : public sf::Drawable, public sf::Transformable
 {
 public:
     Player();
-    void Update(float deltaTime);
+    void Update(float deltaTime, const Background& level); 
     sf::FloatRect GetGlobalBounds() const;
 
     void SetState(PlayerState newState);
@@ -21,9 +24,9 @@ public:
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-    void UpdateUnderWater(float deltaTime);
-    void UpdateSurface(float deltaTime);
-    void UpdateRelax(float deltaTime);
+    void UpdateUnderWater(float deltaTime, const Background& level);
+    void UpdateSurface(float deltaTime, const Background& level);
+    void UpdateRelax(float deltaTime, const Background& level);
 
     void SetRelaxSprite();
     void SetRightSprite();
@@ -32,6 +35,8 @@ private:
     void SetDownSprite();
     void SlowMovement(sf::Vector2f& movement, float speed, float deltaTime);
     void FastMovement(sf::Vector2f& movement, float speed, float deltaTime);
+
+    bool CheckTileCollision(const sf::FloatRect& bounds, const Background& level, TileType type) const;
 
     sf::Texture m_textureRelax;
     sf::Texture m_textureRight;

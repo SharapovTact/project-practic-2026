@@ -1,5 +1,6 @@
 #include "player.hpp"
 #include "../config.hpp"
+#include "../background/background.hpp"
 #include <iostream>
 #include <string>
 #include <cmath>
@@ -67,6 +68,13 @@ PlayerState Player::GetState() const
     return m_currentState;
 }
 
+void Player::SetRelaxSprite() {
+    m_sprite.setTexture(m_textureRelax, true);
+    sf::Vector2f currentScale = m_sprite.getScale();
+    float absScaleX = std::abs(currentScale.x); 
+    m_sprite.setScale({absScaleX, std::abs(currentScale.y)});
+}
+
 void Player::SetRightSprite() {
     m_lastHorizontalPositionIsRight = true;
     m_sprite.setTexture(m_textureRight, true);
@@ -95,6 +103,23 @@ void Player::SetDownSprite() {
     sf::Vector2f currentScale = m_sprite.getScale();
     float absScaleY = std::abs(currentScale.y);
     m_sprite.setScale({currentScale.x, -absScaleY});
+}
+
+bool Player::CheckTileCollision(const sf::FloatRect& bounds, const Background& level, TileType type) const 
+{
+    int startX = static_cast<int>(bounds.position.x / level.GetTileSize());
+    int endX = static_cast<int>((bounds.position.x + bounds.size.x) / level.GetTileSize());
+    int startY = static_cast<int>(bounds.position.y / level.GetTileSize());
+    int endY = static_cast<int>((bounds.position.y + bounds.size.y) / level.GetTileSize());
+
+    for (int y = startY; y <= endY; ++y) {
+        for (int x = startX; x <= endX; ++x) {
+            if (level.GetTile(x, y) == type) {
+                return true; 
+            }
+        }
+    }
+    return false;
 }
 
 void Player::SlowMovement(sf::Vector2f& movement, float speed, float deltaTime) {
@@ -163,7 +188,7 @@ void NormalizationMovementVector(sf::Vector2f& movement, const float speed, cons
     }
 }
 
-void Player::UpdateUnderWater(float deltaTime)
+void Player::UpdateUnderWater(float deltaTime, const Background& level)
 {
     float speed = PLAYER_SPEED; 
     sf::Vector2f movement(0.f, 0.f);
@@ -172,13 +197,10 @@ void Player::UpdateUnderWater(float deltaTime)
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
 
-    if (isShiftPressed) 
-    {
+    if (isShiftPressed) {
         speed = PLAYER_SHIFT_SPEED; 
         FastMovement(movement, speed, deltaTime);
-    } 
-    else 
-    {
+    } else {
         speed = PLAYER_SPEED;
         SlowMovement(movement, speed, deltaTime);
     }
@@ -200,62 +222,66 @@ void Player::UpdateUnderWater(float deltaTime)
     }
     
     NormalizationMovementVector(movement, speed, deltaTime);
+    
+    sf::FloatRect playerBounds = GetGlobalBounds();
+    
+    playerBounds.position.x += movement.x;
+    if (CheckTileCollision(playerBounds, level, TileType::Ground)) {
+        movement.x = 0.f;
+    }
+    
+    playerBounds = GetGlobalBounds(); 
+    playerBounds.position.y += movement.y;
+    if (CheckTileCollision(playerBounds, level, TileType::Ground)) {
+        movement.y = 0.f;
+    }
+
     move(movement);
     
-    sf::Vector2f currentPos = getPosition();
-    const float surfaceY = SCREEN_HEIGHT * SURFACE_PROPORTION + 20; //TODO вынести в конст\а
-
-    if (currentPos.x < minX) currentPos.x = minX;
-    if (currentPos.x > maxX) currentPos.x = maxX;
+    sf::FloatRect currentBounds = GetGlobalBounds();
+    sf::FloatRect centerHitbox;
     
-    if (currentPos.y < surfaceY) 
-    {
-        currentPos.y = surfaceY;
+    centerHitbox.position.x = currentBounds.position.x + currentBounds.size.x / 3.f;
+    centerHitbox.position.y = currentBounds.position.y + currentBounds.size.y / 3.f;
+    centerHitbox.size.x = 1.f;
+    centerHitbox.size.y = 1.f;
+
+    if (CheckTileCollision(centerHitbox, level, TileType::Surface)) {
         SetState(PlayerState::Surface);
     }
-    if (currentPos.y > maxY) currentPos.y = maxY;
-
-    setPosition(currentPos);
 }
 
-void Player::SetRelaxSprite() {
-    m_sprite.setTexture(m_textureRelax, true);
-    sf::Vector2f currentScale = m_sprite.getScale();
-    float absScaleX = std::abs(currentScale.x); 
-    m_sprite.setScale({absScaleX, std::abs(currentScale.y)});
-}
-
-void Player::UpdateSurface(float deltaTime)
+void Player::UpdateSurface(float deltaTime, const Background& level)
 {
     SetRelaxSprite();
     bool isShiftPressed = 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
+        
     if (isShiftPressed && 
-    (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))) {
+       (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))) 
+    {
+        move({0.f, level.GetTileSize() * 0.5f}); 
         SetState(PlayerState::UnderWater);
     }
 }
 
-void Player::UpdateRelax(float deltaTime)
+void Player::UpdateRelax(float deltaTime, const Background& level)
 {
 }
 
-//TODO Сделать объект с которым будет столкновение, по тайлам
-//TODO Сделать камеру, чтобы она следовала 
-
-void Player::Update(float deltaTime) //TODO переделать на органичение линии воды по тайлам
+void Player::Update(float deltaTime, const Background& level)
 {
     switch (m_currentState)
     {
         case PlayerState::UnderWater:
-            UpdateUnderWater(deltaTime);
+            UpdateUnderWater(deltaTime, level);
             break;
         case PlayerState::Surface:
-            UpdateSurface(deltaTime);
+            UpdateSurface(deltaTime, level);
             break;
         case PlayerState::Relax:
-            UpdateRelax(deltaTime);
+            UpdateRelax(deltaTime, level);
             break;
     }
 }
