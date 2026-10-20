@@ -12,6 +12,7 @@ add_executable(app
     src/config.hpp
     src/player/player.cpp
     src/background/background.cpp
+    src/camera/camera.cpp
 )
 
 target_link_libraries(app PRIVATE

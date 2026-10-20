@@ -1,6 +1,7 @@
 #include <SFML/Graphics.hpp>
 #include "src/player/player.hpp"
 #include "src/background/background.hpp"
+#include "src/camera/camera.hpp"
 #include "src/config.hpp"
 
 int main()
@@ -16,6 +17,8 @@ int main()
     Background background;
     Player character;
     character.setPosition({800.f, 350.f});
+
+    Camera camera;
 
     while (window.isOpen())
     {
@@ -37,8 +40,11 @@ int main()
         }
 
         character.Update(deltaTime, background);
+        camera.Update(character.getPosition(), background);
 
         window.clear(BACKGROUND_COLOR);
+        
+        window.setView(camera.GetView());
         
         window.draw(background); 
         window.draw(character);  
