@@ -6,6 +6,9 @@
 
 int main()
 {
+    //TODO сделать текстуры
+    //TODO вынести массив карты
+    //TODO поменять управление на пробел и давление воды добавить (чтобы тонул)
     sf::Vector2u windowSize(
         static_cast<unsigned int>(SCREEN_WIDTH),
         static_cast<unsigned int>(SCREEN_HEIGHT)

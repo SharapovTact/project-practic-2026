@@ -1,5 +1,6 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include <string>
 #include <vector>
 
 enum class TileType {
@@ -11,7 +12,7 @@ enum class TileType {
 class Background : public sf::Drawable
 {
 public:
-    Background();
+    Background(const std::string& mapFilePath = "../../assets/background/level.txt");
     
     void Resize(int newWidth, int newHeight);
     void SetTile(int x, int y, TileType type);
