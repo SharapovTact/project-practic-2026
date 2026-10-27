@@ -1,13 +1,13 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 
-class Background; 
+class Level;
 
-class Camera 
+class Camera
 {
 public:
     Camera();
-    void Update(const sf::Vector2f& targetPos, const Background& background);
+    void Update(const sf::Vector2f& targetPos, const Level& level);
     const sf::View& GetView() const;
 private:
     sf::View m_view;

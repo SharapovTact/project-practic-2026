@@ -7,11 +7,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SFML 3 COMPONENTS Graphics Window System REQUIRED)
 
-add_executable(app 
-    main.cpp 
+add_executable(app
+    main.cpp
     src/config.hpp
     src/player/player.cpp
-    src/background/background.cpp
+    src/level/level.cpp
     src/camera/camera.cpp
 )
 

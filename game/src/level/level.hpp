@@ -9,15 +9,15 @@ enum class TileType {
     Ground = 2
 };
 
-class Background : public sf::Drawable
+class Level : public sf::Drawable
 {
 public:
-    Background(const std::string& mapFilePath = "../../assets/background/level.txt");
-    
+    Level(const std::string& mapFilePath = "../../assets/level/level.txt");
+
     void Resize(int newWidth, int newHeight);
     void SetTile(int x, int y, TileType type);
     TileType GetTile(int x, int y) const;
-    
+
     int GetWidth() const { return m_width; }
     int GetHeight() const { return m_height; }
     float GetTileSize() const { return m_tileSize; }
@@ -25,10 +25,13 @@ public:
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
+    sf::Texture m_bgTexture;
+    sf::Sprite m_bgSprite;
+
     sf::Texture m_surfaceTexture;
     sf::Texture m_waterTexture;
     sf::Texture m_groundTexture;
-    
+
     std::vector<TileType> m_tiles;
     int m_width;
     int m_height;

@@ -1,19 +1,19 @@
 #include "camera.hpp"
-#include "../background/background.hpp"
+#include "../level/level.hpp"
 #include "../config.hpp"
 
-Camera::Camera() 
+Camera::Camera()
 {
     m_view.setSize({SCREEN_WIDTH, SCREEN_HEIGHT});
     m_view.setCenter({SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f});
 }
 
-void Camera::Update(const sf::Vector2f& targetPos, const Background& background) 
+void Camera::Update(const sf::Vector2f& targetPos, const Level& level)
 {
     sf::Vector2f cameraPos = targetPos;
 
-    float mapWidthPx = background.GetWidth() * background.GetTileSize();
-    float mapHeightPx = background.GetHeight() * background.GetTileSize();
+    float mapWidthPx = level.GetWidth() * level.GetTileSize();
+    float mapHeightPx = level.GetHeight() * level.GetTileSize();
 
     float halfWinX = SCREEN_WIDTH / 2.f;
     float halfWinY = SCREEN_HEIGHT / 2.f;

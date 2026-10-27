@@ -1,13 +1,11 @@
 #include <SFML/Graphics.hpp>
 #include "src/player/player.hpp"
-#include "src/background/background.hpp"
+#include "src/level/level.hpp"
 #include "src/camera/camera.hpp"
 #include "src/config.hpp"
 
 int main()
 {
-    //TODO сделать текстуры
-    //TODO вынести массив карты
     //TODO поменять управление на пробел и давление воды добавить (чтобы тонул)
     sf::Vector2u windowSize(
         static_cast<unsigned int>(SCREEN_WIDTH),
@@ -17,7 +15,7 @@ int main()
     sf::RenderWindow window(sf::VideoMode(windowSize), "SFML Test");
 
     sf::Clock clock;
-    Background background;
+    Level level;
     Player character;
     character.setPosition({800.f, 350.f});
 
@@ -42,14 +40,14 @@ int main()
             }
         }
 
-        character.Update(deltaTime, background);
-        camera.Update(character.getPosition(), background);
+        character.Update(deltaTime, level);
+        camera.Update(character.getPosition(), level);
 
         window.clear(BACKGROUND_COLOR);
-        
+
         window.setView(camera.GetView());
-        
-        window.draw(background); 
+
+        window.draw(level);
         window.draw(character);  
 
         window.display();

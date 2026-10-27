@@ -1,19 +1,26 @@
 #include "player.hpp"
 #include "../config.hpp"
-#include "../background/background.hpp"
+#include "../level/level.hpp"
 #include <iostream>
 #include <string>
 #include <cmath>
 
+namespace {
+    bool lastSpaceState = false;
+    bool isDivingFromSurface = false; 
+}
+
 constexpr float PLAYER_SPEED = 100.f;
 constexpr float PLAYER_SHIFT_SPEED = 200.f;
+
+constexpr float PRESSURE_MODIFIER = 0.05f; 
 
 constexpr float PLAYER_WIDTH = 128.f;
 constexpr float PLAYER_HEIGHT = 128.f;
 constexpr float minX = PLAYER_WIDTH / 2;
 constexpr float maxX = SCREEN_WIDTH - PLAYER_WIDTH / 2;
 constexpr float maxY = SCREEN_HEIGHT - PLAYER_HEIGHT / 2;
-constexpr int   HORIZONTAL_MOVEMENT_DELAY = 200;
+constexpr int   HORIZONTAL_MOVEMENT_DELAY = 50;
 
 constexpr const char* spritesSrc = "../../assets/player/";
 constexpr const char* rightSpriteName = "right-start.png";
@@ -105,7 +112,7 @@ void Player::SetDownSprite() {
     m_sprite.setScale({currentScale.x, -absScaleY});
 }
 
-bool Player::CheckTileCollision(const sf::FloatRect& bounds, const Background& level, TileType type) const 
+bool Player::CheckTileCollision(const sf::FloatRect& bounds, const Level& level, TileType type) const 
 {
     int startX = static_cast<int>(bounds.position.x / level.GetTileSize());
     int endX = static_cast<int>((bounds.position.x + bounds.size.x) / level.GetTileSize());
@@ -150,20 +157,7 @@ void Player::SlowMovement(sf::Vector2f& movement, float speed, float deltaTime) 
 }
 
 void Player::FastMovement(sf::Vector2f& movement, float speed, float deltaTime) {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-    {
-        m_horizontalMovementBlockTicks = HORIZONTAL_MOVEMENT_DELAY;
-        movement.y -= speed * deltaTime;
-        SetUpSprite();
-    }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-    {
-        m_horizontalMovementBlockTicks = HORIZONTAL_MOVEMENT_DELAY;
-        movement.y += speed * deltaTime;
-        SetDownSprite();
-    }
+    
     if ((m_horizontalMovementBlockTicks == 0) &&
         (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)))
@@ -188,7 +182,7 @@ void NormalizationMovementVector(sf::Vector2f& movement, const float speed, cons
     }
 }
 
-void Player::UpdateUnderWater(float deltaTime, const Background& level)
+void Player::UpdateUnderWater(float deltaTime, const Level& level)
 {
     float speed = PLAYER_SPEED; 
     sf::Vector2f movement(0.f, 0.f);
@@ -196,18 +190,48 @@ void Player::UpdateUnderWater(float deltaTime, const Background& level)
     bool isShiftPressed = 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
+    
+    bool currentSpaceState = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
 
-    if (isShiftPressed) {
-        speed = PLAYER_SHIFT_SPEED; 
-        FastMovement(movement, speed, deltaTime);
-    } else {
-        speed = PLAYER_SPEED;
-        SlowMovement(movement, speed, deltaTime);
+    if (!currentSpaceState) {
+        isDivingFromSurface = false;
     }
 
-    if (!(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
+    if (currentSpaceState) {
+        speed = PLAYER_SHIFT_SPEED;
+        m_horizontalMovementBlockTicks = HORIZONTAL_MOVEMENT_DELAY;
+        
+        if (isDivingFromSurface) {
+            movement.y += speed * deltaTime;
+            SetDownSprite();
+        } else {
+            movement.y -= speed * deltaTime;
+            SetUpSprite();
+        }
+        
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) {
+            movement.x -= speed * deltaTime;
+        }
+        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) {
+            movement.x += speed * deltaTime;
+        }
+    } 
+    else {
+        if (isShiftPressed) {
+            speed = PLAYER_SHIFT_SPEED; 
+            FastMovement(movement, speed, deltaTime);
+        } else {
+            speed = PLAYER_SPEED;
+            SlowMovement(movement, speed, deltaTime);
+        }
+    }
+
+    lastSpaceState = currentSpaceState;
+
+    if (!currentSpaceState 
+        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
         && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
+        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
         && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
     ) {
         if (m_lastHorizontalPositionIsRight) {
@@ -216,13 +240,15 @@ void Player::UpdateUnderWater(float deltaTime, const Background& level)
             SetLeftSprite();
         }
     }
-
     if (m_horizontalMovementBlockTicks != 0) {
         m_horizontalMovementBlockTicks--;
     }
-    
     NormalizationMovementVector(movement, speed, deltaTime);
-    
+
+    float currentDepth = GetGlobalBounds().position.y;
+    float pressureForce = currentDepth * PRESSURE_MODIFIER * deltaTime;
+    movement.y += pressureForce;
+
     sf::FloatRect playerBounds = GetGlobalBounds();
     
     playerBounds.position.x += movement.x;
@@ -251,26 +277,27 @@ void Player::UpdateUnderWater(float deltaTime, const Background& level)
     }
 }
 
-void Player::UpdateSurface(float deltaTime, const Background& level)
+void Player::UpdateSurface(float deltaTime, const Level& level)
 {
     SetRelaxSprite();
-    bool isShiftPressed = 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
+    
+    bool currentSpaceState = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
         
-    if (isShiftPressed && 
-       (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))) 
+    if (currentSpaceState && !lastSpaceState) 
     {
+        isDivingFromSurface = true;
         move({0.f, level.GetTileSize() * 0.5f}); 
         SetState(PlayerState::UnderWater);
     }
+    
+    lastSpaceState = currentSpaceState;
 }
 
-void Player::UpdateRelax(float deltaTime, const Background& level)
+void Player::UpdateRelax(float deltaTime, const Level& level)
 {
 }
 
-void Player::Update(float deltaTime, const Background& level)
+void Player::Update(float deltaTime, const Level& level)
 {
     switch (m_currentState)
     {
