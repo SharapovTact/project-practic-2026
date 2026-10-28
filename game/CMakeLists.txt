@@ -13,6 +13,8 @@ add_executable(app
     src/player/player.cpp
     src/level/level.cpp
     src/camera/camera.cpp
+    src/state-manager/state-manager.cpp
+    src/hud/hud.cpp
 )
 
 target_link_libraries(app PRIVATE

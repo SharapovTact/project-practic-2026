@@ -17,11 +17,18 @@ public:
     Player();
     void Update(float deltaTime, const Level& level);
     sf::FloatRect GetGlobalBounds() const;
+    void Reset(sf::Vector2f startPosition);
 
     void SetState(PlayerState newState);
     PlayerState GetState() const;
 
+    static void LessOxygen(float deltaTime);
+    static void MoreOxygen(float deltaTime);
+    static float GetOxygen();
+
 private:
+    static float m_oxygen_percent;
+
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
     void UpdateUnderWater(float deltaTime, const Level& level);

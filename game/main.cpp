@@ -3,21 +3,31 @@
 #include "src/level/level.hpp"
 #include "src/camera/camera.hpp"
 #include "src/config.hpp"
+#include "src/state-manager/state-manager.hpp"
+#include "src/hud/hud.hpp"
+
+constexpr sf::Vector2f START_POS = {800.f, 700.f};
+
+HUD hud;
+Level level;
+Player character;
+
+void Reset() {
+    character.Reset(START_POS);
+    StateManager::SetGameState(GameState::Play);
+}
 
 int main()
 {
-    //TODO поменять управление на пробел и давление воды добавить (чтобы тонул)
     sf::Vector2u windowSize(
         static_cast<unsigned int>(SCREEN_WIDTH),
         static_cast<unsigned int>(SCREEN_HEIGHT)
     );
 
     sf::RenderWindow window(sf::VideoMode(windowSize), "SFML Test");
-
     sf::Clock clock;
-    Level level;
-    Player character;
-    character.setPosition({800.f, 350.f});
+    
+    character.setPosition(START_POS);
 
     Camera camera;
 
@@ -35,13 +45,26 @@ int main()
             {
                 if (keyPressed->code == sf::Keyboard::Key::Escape)
                 {
-                    window.close();
+                    if (StateManager::GetGameState() == GameState::Play) {
+                        StateManager::SetGameState(GameState::Pause);
+                    }
+                    else if (StateManager::GetGameState() == GameState::Pause) {
+                        StateManager::SetGameState(GameState::Play);
+                    } 
+                }
+                if (keyPressed->code == sf::Keyboard::Key::Space) {
+                    const GameState s = StateManager::GetGameState();
+                    if (s == GameState::GameOver || s == GameState::Win) {
+                        Reset();
+                    }
                 }
             }
         }
-
-        character.Update(deltaTime, level);
-        camera.Update(character.getPosition(), level);
+        if (StateManager::GetGameState() == GameState::Play) {
+            character.Update(deltaTime, level);
+            camera.Update(character.getPosition(), level);
+        }
+        hud.Update(Player::GetOxygen(), StateManager::GetGameState());
 
         window.clear(BACKGROUND_COLOR);
 
@@ -49,6 +72,7 @@ int main()
 
         window.draw(level);
         window.draw(character);  
+        hud.Draw(window);
 
         window.display();
     }

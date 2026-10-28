@@ -1,6 +1,7 @@
 #include "player.hpp"
 #include "../config.hpp"
 #include "../level/level.hpp"
+#include "../state-manager/state-manager.hpp"
 #include <iostream>
 #include <string>
 #include <cmath>
@@ -10,10 +11,12 @@ namespace {
     bool isDivingFromSurface = false; 
 }
 
-constexpr float PLAYER_SPEED = 100.f;
+constexpr float PLAYER_SPEED = 70.f;
 constexpr float PLAYER_SHIFT_SPEED = 200.f;
 
-constexpr float PRESSURE_MODIFIER = 0.05f; 
+constexpr float PRESSURE_MODIFIER = 0.02f; 
+constexpr float OXYGEN_LESS_SPEED = 4.f;
+constexpr float OXYGEN_MORE_SPEED = 20.f;
 
 constexpr float PLAYER_WIDTH = 128.f;
 constexpr float PLAYER_HEIGHT = 128.f;
@@ -27,10 +30,13 @@ constexpr const char* rightSpriteName = "right-start.png";
 constexpr const char* upSpriteName = "up-start.png";
 constexpr const char* relaxName = "relax.png";
 
+float Player::m_oxygen_percent = 100;
+
 Player::Player() 
     : m_sprite(m_textureRight), 
       m_currentState(PlayerState::UnderWater)
 {
+
     std::string rightPath = std::string(spritesSrc) + rightSpriteName;
     std::string upPath = std::string(spritesSrc) + upSpriteName;
     std::string relaxPath = std::string(spritesSrc) + relaxName;
@@ -57,6 +63,41 @@ Player::Player()
         const float scaleX = PLAYER_WIDTH / static_cast<float>(textureSize.x);
         const float scaleY = PLAYER_HEIGHT / static_cast<float>(textureSize.y);
         m_sprite.setScale({scaleX, scaleY});
+    }
+}
+
+void Player::Reset(sf::Vector2f startPosition) {
+    m_oxygen_percent = 100.f;
+
+    m_currentState = PlayerState::UnderWater;
+    m_horizontalMovementBlockTicks = 0;
+    m_lastHorizontalPositionIsRight = true;
+
+    lastSpaceState = false;
+    isDivingFromSurface = false;
+    setPosition(startPosition);
+    SetRightSprite();
+}
+
+float Player::GetOxygen() {
+    return Player::m_oxygen_percent;
+}
+
+void Player::LessOxygen(float deltaTime) {
+    if (Player::m_oxygen_percent > 0) {
+        m_oxygen_percent -= OXYGEN_LESS_SPEED * deltaTime;
+    }
+    if (Player::m_oxygen_percent < 0) {
+        Player::m_oxygen_percent = 0;
+    }
+}
+
+void Player::MoreOxygen(float deltaTime) {
+    if (Player::m_oxygen_percent < 100) {
+        m_oxygen_percent += OXYGEN_MORE_SPEED * deltaTime;
+    }
+    if (Player::m_oxygen_percent > 100) {
+        Player::m_oxygen_percent = 100;
     }
 }
 
@@ -157,7 +198,6 @@ void Player::SlowMovement(sf::Vector2f& movement, float speed, float deltaTime) 
 }
 
 void Player::FastMovement(sf::Vector2f& movement, float speed, float deltaTime) {
-    
     if ((m_horizontalMovementBlockTicks == 0) &&
         (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)))
@@ -186,6 +226,7 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
 {
     float speed = PLAYER_SPEED; 
     sf::Vector2f movement(0.f, 0.f);
+    Player::LessOxygen(deltaTime);
 
     bool isShiftPressed = 
         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || 
@@ -214,7 +255,7 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) {
             movement.x += speed * deltaTime;
-        }
+        } 
     } 
     else {
         if (isShiftPressed) {
@@ -225,6 +266,7 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
             SlowMovement(movement, speed, deltaTime);
         }
     }
+
 
     lastSpaceState = currentSpaceState;
 
@@ -280,6 +322,8 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
 void Player::UpdateSurface(float deltaTime, const Level& level)
 {
     SetRelaxSprite();
+
+    Player::MoreOxygen(deltaTime);
     
     bool currentSpaceState = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
         
@@ -297,6 +341,12 @@ void Player::UpdateRelax(float deltaTime, const Level& level)
 {
 }
 
+void UpdateGameState() {
+    if (Player::GetOxygen() == 0) {
+        StateManager::SetGameState(GameState::GameOver);
+    }
+}
+
 void Player::Update(float deltaTime, const Level& level)
 {
     switch (m_currentState)
@@ -306,11 +356,13 @@ void Player::Update(float deltaTime, const Level& level)
             break;
         case PlayerState::Surface:
             UpdateSurface(deltaTime, level);
+            StateManager::SetGameState(GameState::Win);
             break;
         case PlayerState::Relax:
             UpdateRelax(deltaTime, level);
             break;
     }
+    UpdateGameState();
 }
 
 void Player::draw(sf::RenderTarget& target, sf::RenderStates states) const
