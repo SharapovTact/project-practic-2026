@@ -12,6 +12,8 @@ add_executable(app
     src/config.hpp
     src/player/player.cpp
     src/level/level.cpp
+    src/level/level-textures.cpp
+    src/menu/main-menu.cpp
     src/camera/camera.cpp
     src/state-manager/state-manager.cpp
     src/hud/hud.cpp

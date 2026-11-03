@@ -5,6 +5,7 @@ class StateManager;
 
 enum class GameState
 {
+    Menu,
     Play,
     Pause,
     GameOver,

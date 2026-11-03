@@ -5,25 +5,9 @@
 #include <fstream>
 #include <string>
 
-Level::Level(const std::string& mapFilePath)
-    : m_bgSprite(m_bgTexture), m_width(0), m_height(0), m_tileSize(64.f)
+Level::Level(const LevelTextures& textures, const std::string& mapFilePath)
+    : m_textures(textures), m_width(0), m_height(0), m_tileSize(64.f)
 {
-    if (!m_surfaceTexture.loadFromFile("../../assets/level/surface.png")) {
-        std::cerr << "Error: failed to load surface texture\n";
-    }
-    if (!m_waterTexture.loadFromFile("../../assets/level/water.png")) {
-        std::cerr << "Error: failed to load water texture\n";
-    }
-    if (!m_groundTexture.loadFromFile("../../assets/level/ground.png")) {
-        std::cerr << "Error: failed to load ground texture\n";
-    }
-    
-    if (!m_bgTexture.loadFromFile("../../assets/level/background.jpeg")) {
-    std::cout << "Error: failed to load background\n";
-    } else {
-        m_bgSprite = sf::Sprite(m_bgTexture);
-    }
-
     std::vector<std::string> levelDesign;
     std::ifstream mapFile(mapFilePath);
 
@@ -44,17 +28,6 @@ Level::Level(const std::string& mapFilePath)
     int mapWidth = (mapHeight > 0) ? static_cast<int>(levelDesign[0].size()) : 0;
 
     Resize(mapWidth, mapHeight);
-
-    if (m_bgTexture.getSize().x > 0 && m_bgTexture.getSize().y > 0) {
-        float totalWidth = m_width * m_tileSize;
-        float totalHeight = m_height * m_tileSize;
-        
-        float scaleX = totalWidth / static_cast<float>(m_bgTexture.getSize().x);
-        float scaleY = totalHeight / static_cast<float>(m_bgTexture.getSize().y);
-        
-        m_bgSprite.setScale({scaleX, scaleY});
-        m_bgSprite.setPosition({0.f, 0.f});
-    }
 
     for (int y = 0; y < m_height; y++) {
         int currentLineWidth = static_cast<int>(levelDesign[y].size());
@@ -101,22 +74,36 @@ TileType Level::GetTile(int x, int y) const {
 
 void Level::draw(sf::RenderTarget& target, sf::RenderStates states) const
 {
-    target.draw(m_bgSprite, states);
+    if (!m_textures.IsLoaded()) {
+        return;
+    }
 
-    sf::Sprite tileSprite(m_surfaceTexture);
+    if (m_textures.HasBackground()) {
+        const sf::Vector2u bgSize = m_textures.Background().getSize();
+        if (bgSize.x > 0 && bgSize.y > 0) {
+            sf::Sprite bgSprite(m_textures.Background());
+            bgSprite.setScale({
+                (m_width * m_tileSize) / static_cast<float>(bgSize.x),
+                (m_height * m_tileSize) / static_cast<float>(bgSize.y)
+            });
+            target.draw(bgSprite, states);
+        }
+    }
+
+    sf::Sprite tileSprite(m_textures.Surface());
 
     for (int y = 0; y < m_height; ++y) {
         for (int x = 0; x < m_width; ++x) {
             TileType type = GetTile(x, y);
 
             if (type == TileType::Surface) {
-                tileSprite.setTexture(m_surfaceTexture);
+                tileSprite.setTexture(m_textures.Surface());
                 tileSprite.setColor(sf::Color(255, 255, 255, 255));
             } else if (type == TileType::Ground) {
-                tileSprite.setTexture(m_groundTexture);
+                tileSprite.setTexture(m_textures.Ground());
                 tileSprite.setColor(sf::Color(255, 255, 255, 255));
             } else {
-                tileSprite.setTexture(m_waterTexture);
+                tileSprite.setTexture(m_textures.Water());
                 tileSprite.setColor(sf::Color(255, 255, 255, 150));
             }
 

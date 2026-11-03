@@ -37,6 +37,11 @@ void HUD::Update(float oxygenPercent, GameState state)
 
 void HUD::Draw(sf::RenderWindow& window)
 {
+    // В главном меню HUD не нужен: меню рисует себя само.
+    if (m_currentState == GameState::Menu) {
+        return;
+    }
+
     const sf::Vector2u size = window.getSize();
     window.setView(sf::View(sf::FloatRect(
         {0.f, 0.f},
@@ -60,6 +65,9 @@ void HUD::DrawOverlay(sf::RenderWindow& window)
 
     std::string text;
     switch (m_currentState) {
+        case GameState::Menu:
+            text = "MAIN MENU";
+            break;
         case GameState::Pause:    
             text = "PAUSED";    
             break;

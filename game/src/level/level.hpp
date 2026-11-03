@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include <vector>
+#include "level-textures.hpp"
 
 enum class TileType {
     Water = 0,
@@ -12,7 +13,7 @@ enum class TileType {
 class Level : public sf::Drawable
 {
 public:
-    Level(const std::string& mapFilePath = "../../assets/level/level.txt");
+    explicit Level(const LevelTextures& textures, const std::string& mapFilePath = "../../assets/level/level.txt");
 
     void Resize(int newWidth, int newHeight);
     void SetTile(int x, int y, TileType type);
@@ -25,12 +26,7 @@ public:
 private:
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
 
-    sf::Texture m_bgTexture;
-    sf::Sprite m_bgSprite;
-
-    sf::Texture m_surfaceTexture;
-    sf::Texture m_waterTexture;
-    sf::Texture m_groundTexture;
+    const LevelTextures& m_textures;
 
     std::vector<TileType> m_tiles;
     int m_width;

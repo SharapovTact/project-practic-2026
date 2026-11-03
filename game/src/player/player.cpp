@@ -356,7 +356,7 @@ void Player::Update(float deltaTime, const Level& level)
             break;
         case PlayerState::Surface:
             UpdateSurface(deltaTime, level);
-            StateManager::SetGameState(GameState::Win);
+            //StateManager::SetGameState(GameState::Win);
             break;
         case PlayerState::Relax:
             UpdateRelax(deltaTime, level);
