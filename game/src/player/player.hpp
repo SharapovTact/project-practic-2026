@@ -11,13 +11,18 @@ enum class PlayerState
     Relax
 };
 
-class Player : public sf::Drawable, public sf::Transformable
+class Player : public sf::Transformable, public sf::Drawable
 {
 public:
     Player();
     void Update(float deltaTime, const Level& level);
-    sf::FloatRect GetGlobalBounds() const;
     void Reset(sf::Vector2f startPosition);
+
+    sf::FloatRect GetHitbox() const;    
+    sf::FloatRect GetLocalHitbox() const { return m_hitbox; }
+    sf::FloatRect GetGlobalBounds() const;  
+
+    void DrawDebug(sf::RenderTarget& target) const;
 
     void SetState(PlayerState newState);
     PlayerState GetState() const;
@@ -48,9 +53,10 @@ private:
     sf::Texture m_textureRelax;
     sf::Texture m_textureRight;
     sf::Texture m_textureUp;
-    sf::Sprite m_sprite;
+    sf::Sprite  m_sprite;
+    sf::FloatRect m_hitbox; 
 
     bool m_lastHorizontalPositionIsRight;
-    int m_horizontalMovementBlockTicks;
+    int  m_horizontalMovementBlockTicks;
     PlayerState m_currentState;
 };
