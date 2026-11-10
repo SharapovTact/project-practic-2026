@@ -1,4 +1,5 @@
 #include "hud.hpp"
+#include "../config.hpp"
 #include <iostream>
 #include <string>
 
@@ -15,7 +16,7 @@ HUD::HUD():
     m_currentState(GameState::Play)
 {
     if (!m_font.openFromFile(FONT_PATH)) { 
-        std::cerr << "Error: failed to load font '" << FONT_PATH << "'\n";
+        std::cerr << "Ошибка: не удалось загрузить шрифт '" << FONT_PATH << "'\n";
     }
 
     m_oxygenText.setFillColor(sf::Color::White);
@@ -31,13 +32,12 @@ void HUD::Update(float oxygenPercent, GameState state)
     m_currentState = state;
 
     m_oxygenText.setString(
-        "Oxygen: " + std::to_string(static_cast<int>(oxygenPercent)) + "%"
+        Utf8("Кислород: " + std::to_string(static_cast<int>(oxygenPercent)) + "%")
     );
 }
 
 void HUD::Draw(sf::RenderWindow& window)
 {
-    // В главном меню HUD не нужен: меню рисует себя само.
     if (m_currentState == GameState::Menu) {
         return;
     }
@@ -66,19 +66,19 @@ void HUD::DrawOverlay(sf::RenderWindow& window)
     std::string text;
     switch (m_currentState) {
         case GameState::Menu:
-            text = "MAIN MENU";
+            text = "Главное меню";
             break;
         case GameState::Pause:    
-            text = "PAUSED";    
+            text = "Пауза";    
             break;
         case GameState::GameOver: 
-            text = "GAME OVER\nPress Space"; 
+            text = "Утонул\nНажми пробел"; 
             break;
         case GameState::Win:      
-            text = "YOU WIN";   
+            text = "Ты победил";   
             break;
     }
-    m_stateText.setString(text);
+    m_stateText.setString(Utf8(text));
 
     const sf::FloatRect b = m_stateText.getLocalBounds();
     m_stateText.setOrigin({

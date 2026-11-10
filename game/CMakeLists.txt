@@ -19,6 +19,10 @@ add_executable(app
     src/hud/hud.cpp
 )
 
+if (MSVC)
+    target_compile_options(app PRIVATE /utf-8)
+endif()
+
 target_link_libraries(app PRIVATE
     SFML::Graphics
     SFML::Window

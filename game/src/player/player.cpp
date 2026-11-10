@@ -2,6 +2,7 @@
 #include "../config.hpp"
 #include "../level/level.hpp"
 #include "../state-manager/state-manager.hpp"
+#include <algorithm>
 #include <iostream>
 #include <string>
 #include <cmath>
@@ -9,6 +10,11 @@
 namespace {
     bool lastSpaceState = false;
     bool isDivingFromSurface = false;
+
+    bool IsUpPressed()    { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up); }
+    bool IsDownPressed()  { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down); }
+    bool IsLeftPressed()  { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left); }
+    bool IsRightPressed() { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right); }
 }
 
 constexpr float PLAYER_SPEED = 70.f;
@@ -25,44 +31,30 @@ constexpr float maxX = SCREEN_WIDTH - PLAYER_WIDTH / 2;
 constexpr float maxY = SCREEN_HEIGHT - PLAYER_HEIGHT / 2;
 constexpr int   HORIZONTAL_MOVEMENT_DELAY = 50;
 
+constexpr float FAST_SWIM_ANIM_SPEED = 1.7f;
+constexpr float SURFACE_STICK_SPEED  = 8.f; 
+
 constexpr const char* spritesSrc = "../../assets/player/";
-constexpr const char* rightSpriteName = "right-start.png";
-constexpr const char* upSpriteName = "up-start.png";
-constexpr const char* relaxName = "relax.png";
+constexpr const char* sheetName  = "diver_sheet.png";
 
 float Player::m_oxygen_percent = 100;
 
 Player::Player()
-    : m_sprite(m_textureRight),
+    : m_sprite(m_textureSheet),
+      m_animator(m_sprite),
       m_currentState(PlayerState::UnderWater)
 {
-    std::string rightPath = std::string(spritesSrc) + rightSpriteName;
-    std::string upPath    = std::string(spritesSrc) + upSpriteName;
-    std::string relaxPath = std::string(spritesSrc) + relaxName;
+    const std::string sheetPath = std::string(spritesSrc) + sheetName;
     m_horizontalMovementBlockTicks = 0;
 
-    if (!m_textureRight.loadFromFile(rightPath)) {
-        std::cerr << "Error: failed to load texture '" << rightPath << "'" << std::endl;
+    if (!m_textureSheet.loadFromFile(sheetPath)) {
+        std::cerr << "Ошибка: не удалось загрузить текстуру '" << sheetPath << "'" << std::endl;
     }
-    if (!m_textureUp.loadFromFile(upPath)) {
-        std::cerr << "Error: failed to load texture '" << upPath << "'" << std::endl;
-    }
-    if (!m_textureRelax.loadFromFile(relaxPath)) {
-        std::cerr << "Error: failed to load texture '" << relaxPath << "'" << std::endl;
-    }
+    m_sprite.setTexture(m_textureSheet);
 
-    m_sprite.setTexture(m_textureRight, true);
     m_lastHorizontalPositionIsRight = true;
-
-    const sf::Vector2u textureSize = m_textureRight.getSize();
-    if (textureSize.x > 0 && textureSize.y > 0)
-    {
-        m_sprite.setOrigin({textureSize.x / 2.f, textureSize.y / 2.f});
-
-        const float scaleX = PLAYER_WIDTH / static_cast<float>(textureSize.x);
-        const float scaleY = PLAYER_HEIGHT / static_cast<float>(textureSize.y);
-        m_sprite.setScale({scaleX, scaleY});
-    }
+    ApplyFacing();
+    m_animator.play(diver::Anim::Hover, true);
 
     const float hbWidth  = 100.f;
     const float hbHeight = 30.f;
@@ -79,12 +71,12 @@ void Player::Reset(sf::Vector2f startPosition) {
 
     m_currentState = PlayerState::UnderWater;
     m_horizontalMovementBlockTicks = 0;
-    m_lastHorizontalPositionIsRight = true;
 
     lastSpaceState = false;
     isDivingFromSurface = false;
     setPosition(startPosition);
     SetRightSprite();
+    m_animator.play(diver::Anim::Hover, true);
 }
 
 float Player::GetOxygen() {
@@ -135,41 +127,18 @@ void Player::DrawDebug(sf::RenderTarget& target) const
 void Player::SetState(PlayerState newState) { m_currentState = newState; }
 PlayerState Player::GetState() const { return m_currentState; }
 
-void Player::SetRelaxSprite() {
-    m_sprite.setTexture(m_textureRelax, true);
-    sf::Vector2f currentScale = m_sprite.getScale();
-    float absScaleX = std::abs(currentScale.x);
-    m_sprite.setScale({absScaleX, std::abs(currentScale.y)});
+void Player::ApplyFacing() {
+    m_sprite.setScale({m_lastHorizontalPositionIsRight ? 1.f : -1.f, 1.f});
 }
 
 void Player::SetRightSprite() {
     m_lastHorizontalPositionIsRight = true;
-    m_sprite.setTexture(m_textureRight, true);
-    sf::Vector2f currentScale = m_sprite.getScale();
-    float absScaleX = std::abs(currentScale.x);
-    m_sprite.setScale({absScaleX, std::abs(currentScale.y)});
+    ApplyFacing();
 }
 
 void Player::SetLeftSprite() {
     m_lastHorizontalPositionIsRight = false;
-    m_sprite.setTexture(m_textureRight, true);
-    sf::Vector2f currentScale = m_sprite.getScale();
-    float absScaleX = std::abs(currentScale.x);
-    m_sprite.setScale({-absScaleX, std::abs(currentScale.y)});
-}
-
-void Player::SetUpSprite() {
-    m_sprite.setTexture(m_textureUp, true);
-    sf::Vector2f currentScale = m_sprite.getScale();
-    float absScaleY = std::abs(currentScale.y);
-    m_sprite.setScale({currentScale.x, absScaleY});
-}
-
-void Player::SetDownSprite() {
-    m_sprite.setTexture(m_textureUp, true);
-    sf::Vector2f currentScale = m_sprite.getScale();
-    float absScaleY = std::abs(currentScale.y);
-    m_sprite.setScale({currentScale.x, -absScaleY});
+    ApplyFacing();
 }
 
 bool Player::CheckTileCollision(const sf::FloatRect& bounds, const Level& level, TileType type) const
@@ -189,46 +158,49 @@ bool Player::CheckTileCollision(const sf::FloatRect& bounds, const Level& level,
     return false;
 }
 
+float Player::FindWaterSurfaceY(const Level& level) const
+{
+    const int tileX = static_cast<int>(getPosition().x / level.GetTileSize());
+    int tileY = 0;
+    while (tileY < level.GetHeight() && level.GetTile(tileX, tileY) == TileType::Surface) {
+        ++tileY;
+    }
+    return tileY * level.GetTileSize();
+}
+
+void Player::StickToSurface(const Level& level, diver::Anim anim, float deltaTime)
+{
+    const float targetY = diver::hipYOnSurface(anim, FindWaterSurfaceY(level));
+    const float k = std::min(1.f, SURFACE_STICK_SPEED * deltaTime);
+    sf::Vector2f pos = getPosition();
+    pos.y += (targetY - pos.y) * k;
+    setPosition(pos);
+}
+
 
 void Player::SlowMovement(sf::Vector2f& movement, float speed, float deltaTime) {
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) ||
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-    {
+    if (IsUpPressed()) {
         movement.y -= speed * deltaTime;
     }
-    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) ||
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-    {
+    if (IsDownPressed()) {
         movement.y += speed * deltaTime;
     }
-    if ((m_horizontalMovementBlockTicks == 0) &&
-        (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) ||
-         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)))
-    {
+    if ((m_horizontalMovementBlockTicks == 0) && IsLeftPressed()) {
         movement.x -= speed * deltaTime;
         SetLeftSprite();
     }
-    if ((m_horizontalMovementBlockTicks == 0) &&
-        (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) ||
-         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)))
-    {
+    if ((m_horizontalMovementBlockTicks == 0) && IsRightPressed()) {
         movement.x += speed * deltaTime;
         SetRightSprite();
     }
 }
 
 void Player::FastMovement(sf::Vector2f& movement, float speed, float deltaTime) {
-    if ((m_horizontalMovementBlockTicks == 0) &&
-        (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) ||
-         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)))
-    {
+    if ((m_horizontalMovementBlockTicks == 0) && IsLeftPressed()) {
         movement.x -= speed * deltaTime;
         SetLeftSprite();
     }
-    if ((m_horizontalMovementBlockTicks == 0) &&
-        (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) ||
-         sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)))
-    {
+    if ((m_horizontalMovementBlockTicks == 0) && IsRightPressed()) {
         movement.x += speed * deltaTime;
         SetRightSprite();
     }
@@ -265,18 +237,14 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
 
         if (isDivingFromSurface) {
             movement.y += speed * deltaTime;
-            SetDownSprite();
         } else {
             movement.y -= speed * deltaTime;
-            SetUpSprite();
         }
 
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left)) {
+        if (IsLeftPressed()) {
             movement.x -= speed * deltaTime;
         }
-        if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) ||
-            sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right)) {
+        if (IsRightPressed()) {
             movement.x += speed * deltaTime;
         }
     }
@@ -290,20 +258,17 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
         }
     }
 
+    if (currentSpaceState) {
+        m_animator.play(isDivingFromSurface ? diver::Anim::VerticalDown : diver::Anim::VerticalUp);
+    } else if (movement.x != 0.f) {
+        m_animator.play(diver::Anim::Swim);
+        m_animator.setSpeed(isShiftPressed ? FAST_SWIM_ANIM_SPEED : 1.f);
+    } else {
+        m_animator.play(diver::Anim::Hover);
+    }
+
     lastSpaceState = currentSpaceState;
 
-    if (!currentSpaceState
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::W) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Up))
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down))
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left))
-        && !(sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right))
-    ) {
-        if (m_lastHorizontalPositionIsRight) {
-            SetRightSprite();
-        } else {
-            SetLeftSprite();
-        }
-    }
     if (m_horizontalMovementBlockTicks != 0) {
         m_horizontalMovementBlockTicks--;
     }
@@ -335,29 +300,57 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
 
     if (CheckTileCollision(centerHitbox, level, TileType::Surface)) {
         SetState(PlayerState::Surface);
+        m_animator.play(diver::Anim::Idle);
     }
 }
 
 void Player::UpdateSurface(float deltaTime, const Level& level)
 {
-    SetRelaxSprite();
-
+    m_animator.play(diver::Anim::Idle);
+    StickToSurface(level, diver::Anim::Idle, deltaTime);
     Player::MoreOxygen(deltaTime);
 
     bool currentSpaceState = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
 
-    if (currentSpaceState && !lastSpaceState)
-    {
-        isDivingFromSurface = true;
-        move({0.f, level.GetTileSize() * 0.5f});
-        SetState(PlayerState::UnderWater);
+    if (currentSpaceState && !lastSpaceState) {
+        SetState(PlayerState::Relax);
+        m_animator.play(diver::Anim::Relax, true);
     }
 
     lastSpaceState = currentSpaceState;
 }
 
-void Player::UpdateRelax(float , const Level&)
+void Player::UpdateRelax(float deltaTime, const Level& level)
 {
+    m_animator.play(diver::Anim::Relax);
+    StickToSurface(level, diver::Anim::Relax, deltaTime);
+    Player::MoreOxygen(deltaTime);
+
+    bool currentSpaceState = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
+
+    if (currentSpaceState && !lastSpaceState) {
+        SetState(PlayerState::Dive);
+        m_animator.play(diver::Anim::Dive, true);
+    } else if (IsUpPressed()) {
+        SetState(PlayerState::Surface);
+        m_animator.play(diver::Anim::Idle, true);
+    }
+
+    lastSpaceState = currentSpaceState;
+}
+
+void Player::UpdateDive(float deltaTime, const Level&)
+{
+    Player::LessOxygen(deltaTime);
+
+    if (m_animator.finished()) {
+        move({0.f, diver::kDiveRootDy.back()});
+        isDivingFromSurface = true; 
+        SetState(PlayerState::UnderWater);
+        m_animator.play(diver::Anim::VerticalDown, true);
+    }
+
+    lastSpaceState = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
 }
 
 void UpdateGameState() {
@@ -379,7 +372,14 @@ void Player::Update(float deltaTime, const Level& level)
         case PlayerState::Relax:
             UpdateRelax(deltaTime, level);
             break;
+        case PlayerState::Dive:
+            UpdateDive(deltaTime, level);
+            break;
     }
+
+    m_animator.update(sf::seconds(deltaTime));
+    m_sprite.setPosition(m_animator.rootOffset());
+
     UpdateGameState();
 }
 

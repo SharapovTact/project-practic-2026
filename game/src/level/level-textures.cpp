@@ -9,7 +9,7 @@ namespace {
     {
         const std::string path = TEXTURES_DIR + fileName;
         if (!texture.loadFromFile(path)) {
-            std::cerr << "Error: failed to load texture '" << path << "'\n";
+            std::cerr << "Ошибка: не удалось загрузить текстуру '" << path << "'\n";
             return false;
         }
         return true;
@@ -29,8 +29,8 @@ bool LevelTextures::Load()
 
     m_hasBackground = m_background.loadFromFile(TEXTURES_DIR + "background.jpeg");
     if (!m_hasBackground) {
-        std::cout << "Note: optional background '" << TEXTURES_DIR
-                  << "background.jpeg' not found, level will be drawn without it\n";
+        std::cout << "Примечание: необязательный фон '" << TEXTURES_DIR
+                  << "background.jpeg' не найден, уровень будет нарисован без него\n";
     }
 
     m_loaded = ok;

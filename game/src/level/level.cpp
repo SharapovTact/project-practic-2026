@@ -20,7 +20,7 @@ Level::Level(const LevelTextures& textures, const std::string& mapFilePath)
         }
         mapFile.close();
     } else {
-        std::cerr << "Error: failed to load map file: " << mapFilePath << "\n";
+        std::cerr << "Ошибка: не удалось загрузить карту уровня: " << mapFilePath << "\n";
         levelDesign = {"GGGG", "~~~~", "####"};
     }
 

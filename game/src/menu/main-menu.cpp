@@ -1,8 +1,9 @@
 #include "main-menu.hpp"
+#include "../config.hpp"
 #include <iostream>
 
 constexpr const char*  FONT_PATH = "../../assets/fonts/arial.ttf";
-constexpr const char*  GAME_TITLE = "DEEP DIVE";
+constexpr const char*  GAME_TITLE = "ГЛУБОКОЕ ПОГРУЖЕНИЕ";
 
 constexpr unsigned int TITLE_FONT_SIZE = 96;
 constexpr unsigned int BUTTON_FONT_SIZE = 40;
@@ -20,11 +21,11 @@ MainMenu::MainMenu(LevelTextures& textures)
     : m_textures(textures),
       m_loadAttempted(false),
       m_buttonHovered(false),
-      m_titleText(m_font, GAME_TITLE, TITLE_FONT_SIZE),
-      m_buttonText(m_font, "Play", BUTTON_FONT_SIZE)
+      m_titleText(m_font, Utf8(GAME_TITLE), TITLE_FONT_SIZE),
+      m_buttonText(m_font, Utf8("Играть"), BUTTON_FONT_SIZE)
 {
     if (!m_font.openFromFile(FONT_PATH)) {
-        std::cerr << "Error: failed to load font '" << FONT_PATH << "'\n";
+        std::cerr << "Ошибка: не удалось загрузить шрифт '" << FONT_PATH << "'\n";
     }
 
     m_titleText.setFillColor(TITLE_COLOR);
