@@ -3,7 +3,7 @@
 #include <iostream>
 
 constexpr const char*  FONT_PATH = "../../assets/fonts/arial.ttf";
-constexpr const char*  GAME_TITLE = "ГЛУБОКОЕ ПОГРУЖЕНИЕ";
+constexpr const char*  GAME_TITLE = "    ГЛУБОКОЕ ПОГРУЖЕНИЕ\nРУССКОГО ПОДВОДНОГО ОХОТНИКА";
 
 constexpr unsigned int TITLE_FONT_SIZE = 96;
 constexpr unsigned int BUTTON_FONT_SIZE = 40;

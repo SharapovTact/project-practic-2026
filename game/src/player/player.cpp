@@ -15,10 +15,12 @@ namespace {
     bool IsDownPressed()  { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::S) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Down); }
     bool IsLeftPressed()  { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::A) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Left); }
     bool IsRightPressed() { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::D) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Right); }
+    bool IsShiftPressed() { return sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift); }
+        
 }
 
-constexpr float PLAYER_SPEED = 70.f;
-constexpr float PLAYER_SHIFT_SPEED = 200.f;
+constexpr float PLAYER_SPEED = 100.f;
+constexpr float PLAYER_SHIFT_SPEED = 150.f;
 
 constexpr float PRESSURE_MODIFIER = 0.02f;
 constexpr float OXYGEN_LESS_SPEED = 4.f;
@@ -33,6 +35,7 @@ constexpr int   HORIZONTAL_MOVEMENT_DELAY = 50;
 
 constexpr float FAST_SWIM_ANIM_SPEED = 1.7f;
 constexpr float SURFACE_STICK_SPEED  = 8.f; 
+constexpr float PIXELS_PER_METER = 64.f;
 
 constexpr const char* spritesSrc = "../../assets/player/";
 constexpr const char* sheetName  = "diver_sheet.png";
@@ -163,9 +166,18 @@ float Player::FindWaterSurfaceY(const Level& level) const
     const int tileX = static_cast<int>(getPosition().x / level.GetTileSize());
     int tileY = 0;
     while (tileY < level.GetHeight() && level.GetTile(tileX, tileY) == TileType::Surface) {
-        ++tileY;
+        tileY++;
     }
     return tileY * level.GetTileSize();
+}
+
+float Player::GetDepth(const Level& level) const
+{
+    if (m_currentState == PlayerState::Surface || m_currentState == PlayerState::Relax) {
+        return 0.f;
+    }
+    const float y = getPosition().y + m_animator.rootOffset().y;
+    return std::max(0.f, (y - FindWaterSurfaceY(level)) / PIXELS_PER_METER);
 }
 
 void Player::StickToSurface(const Level& level, diver::Anim anim, float deltaTime)
@@ -221,17 +233,13 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
     sf::Vector2f movement(0.f, 0.f);
     Player::LessOxygen(deltaTime);
 
-    bool isShiftPressed =
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::LShift) ||
-        sf::Keyboard::isKeyPressed(sf::Keyboard::Key::RShift);
-
     bool currentSpaceState = sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Space);
 
     if (!currentSpaceState) {
         isDivingFromSurface = false;
     }
 
-    if (currentSpaceState) {
+     if (currentSpaceState) {
         speed = PLAYER_SHIFT_SPEED;
         m_horizontalMovementBlockTicks = HORIZONTAL_MOVEMENT_DELAY;
 
@@ -243,13 +251,15 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
 
         if (IsLeftPressed()) {
             movement.x -= speed * deltaTime;
+            SetLeftSprite();     
         }
         if (IsRightPressed()) {
             movement.x += speed * deltaTime;
+            SetRightSprite();
         }
     }
     else {
-        if (isShiftPressed) {
+        if (IsShiftPressed()) {
             speed = PLAYER_SHIFT_SPEED;
             FastMovement(movement, speed, deltaTime);
         } else {
@@ -262,7 +272,7 @@ void Player::UpdateUnderWater(float deltaTime, const Level& level)
         m_animator.play(isDivingFromSurface ? diver::Anim::VerticalDown : diver::Anim::VerticalUp);
     } else if (movement.x != 0.f) {
         m_animator.play(diver::Anim::Swim);
-        m_animator.setSpeed(isShiftPressed ? FAST_SWIM_ANIM_SPEED : 1.f);
+        m_animator.setSpeed(IsShiftPressed() ? FAST_SWIM_ANIM_SPEED : 1.f);
     } else {
         m_animator.play(diver::Anim::Hover);
     }
@@ -323,6 +333,29 @@ void Player::UpdateSurface(float deltaTime, const Level& level)
 void Player::UpdateRelax(float deltaTime, const Level& level)
 {
     m_animator.play(diver::Anim::Relax);
+
+    
+    float speed = IsShiftPressed() ? PLAYER_SHIFT_SPEED : PLAYER_SPEED;
+
+    sf::Vector2f movement(0.f, 0.f);
+    if (IsLeftPressed()) {
+        movement.x -= speed * deltaTime;
+        SetLeftSprite();
+    }
+    if (IsRightPressed()) {
+        movement.x += speed * deltaTime;
+        SetRightSprite();
+    }
+
+    sf::FloatRect playerBounds = GetHitbox();
+    playerBounds.position.x += movement.x;
+    if (CheckTileCollision(playerBounds, level, TileType::Ground)) {
+        movement.x = 0.f;
+    }
+    move(movement);
+
+    m_animator.setSpeed(movement.x != 0.f ? (IsShiftPressed() ? 2.5f : 1.8f) : 1.f);
+
     StickToSurface(level, diver::Anim::Relax, deltaTime);
     Player::MoreOxygen(deltaTime);
 

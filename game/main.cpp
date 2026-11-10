@@ -7,6 +7,7 @@
 #include "src/hud/hud.hpp"
 #include "src/level/level-textures.hpp"
 #include "src/menu/main-menu.hpp"
+#include "src/audio/audio.hpp"
 
 constexpr sf::Vector2f START_POS = {800.f, 700.f};
 
@@ -15,6 +16,7 @@ MainMenu mainMenu(levelTextures);
 HUD hud;
 Level level(levelTextures);
 Player character; //Переделать хитбокс персонажа, чтобы мог касаться ногой дна
+bool debugDraw = false;
 
 void Reset() {
     character.Reset(START_POS);
@@ -35,6 +37,7 @@ int main()
     character.setPosition(START_POS);
 
     Camera camera;
+    Audio audio;
 
     while (window.isOpen())
     {
@@ -53,6 +56,9 @@ int main()
             }
             if (const auto* keyPressed = event->getIf<sf::Event::KeyPressed>()) 
             {
+                if (keyPressed->code == sf::Keyboard::Key::F1) {
+                    debugDraw = !debugDraw;
+                }
                 if (keyPressed->code == sf::Keyboard::Key::Escape)
                 {
                     if (StateManager::GetGameState() == GameState::Play) {
@@ -76,8 +82,11 @@ int main()
         }
         else if (state == GameState::Play) {
             character.Update(deltaTime, level);
+            const PlayerState playerState = character.GetState();
+            hud.UpdateView(deltaTime, playerState == PlayerState::UnderWater || playerState == PlayerState::Dive || playerState == PlayerState::Relax, character.GetDepth(level));
             camera.Update(character.getPosition(), level);
         }
+        audio.Update(deltaTime, character, StateManager::GetGameState());
         hud.Update(Player::GetOxygen(), StateManager::GetGameState());
 
         window.clear(BACKGROUND_COLOR);
@@ -90,6 +99,9 @@ int main()
 
             window.draw(level);
             window.draw(character);
+            if (debugDraw) {
+                character.DrawDebug(window);  
+            }
             hud.Draw(window);
         }
 

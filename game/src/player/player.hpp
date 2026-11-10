@@ -28,6 +28,9 @@ public:
 
     void SetState(PlayerState newState);
     PlayerState GetState() const;
+    diver::Anim GetAnim() const { return m_animator.current(); }
+    float GetAnimSpeed() const { return m_animator.speed(); }
+    float GetDepth(const Level& level) const;
 
     static void LessOxygen(float deltaTime);
     static void MoreOxygen(float deltaTime);

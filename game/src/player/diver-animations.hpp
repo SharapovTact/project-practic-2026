@@ -75,6 +75,7 @@ public:
 
     bool finished() const { return m_finished; }
     Anim current() const { return m_anim; }
+    float speed() const { return m_speed; }
     int frame() const { return m_frame; }
 
 private:
