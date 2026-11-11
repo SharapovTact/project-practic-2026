@@ -6,13 +6,14 @@
 namespace {
     constexpr const char* SOUNDS_DIR = "../../assets/sounds/";
 
-    constexpr float AMBIENT_VOLUME     = 55.f;
-    constexpr float AMBIENT_FADE_SPEED = 3.0f;
-    constexpr float LOOP_VOLUME        = 70.f;
-    constexpr float BREATH_VOLUME      = 65.f;
-    constexpr float ONESHOT_VOLUME     = 90.f;
+    constexpr float AMBIENT_VOLUME        = 55.f;
+    constexpr float AMBIENT_FADE_SPEED    = 3.0f;
+    constexpr float LOOP_VOLUME           = 70.f;
+    constexpr float BREATH_VOLUME         = 65.f;
+    constexpr float ONESHOT_VOLUME        = 90.f;
     constexpr float RELAX_SWIM_ANIM_SPEED = 3.0f;
-    constexpr float MOVEMENT_AUDIO_SPEED = 0.7f;
+    constexpr float MOVEMENT_AUDIO_SPEED  = 0.7f;
+    constexpr int   LOOP_VOLUME_DELAY      = 100;
 
     std::string PathTo(const char* name) { return std::string(SOUNDS_DIR) + name; }
 
@@ -57,8 +58,9 @@ Audio::Audio(): m_loop(m_loopBuffers[0]), m_breath(m_breathBuffer), m_oneShot(m_
 
 void Audio::SetLoop(Loop loop, float pitch)
 {
-    if (loop != m_currentLoop) {
+    if (loop != m_currentLoop && m_loopVolumeDelayTicks == 0) {
         m_loop.stop();
+        m_loopVolumeDelayTicks = LOOP_VOLUME_DELAY;
         m_currentLoop = loop;
         if (loop != Loop::None) {
             m_loop.setBuffer(m_loopBuffers[static_cast<std::size_t>(loop)]);
@@ -118,6 +120,10 @@ void Audio::Update(float deltaTime, const Player& player, GameState gameState)
         m_ambUnderwater.play();
         m_ambSurface.play();
         m_started = true;
+    }
+
+    if (m_loopVolumeDelayTicks > 0) {
+        m_loopVolumeDelayTicks -= (int)deltaTime;
     }
 
     if (gameState == GameState::Pause) {

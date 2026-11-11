@@ -50,7 +50,11 @@ public:
 
     void play(Anim a, bool restart = false) {
         if (a == m_anim && !restart) return;
-        m_anim = a; m_frame = 0; m_timeMs = 0.f; m_finished = false; m_speed = 1.f;
+        m_anim = a; 
+        m_frame = 0; 
+        m_timeMs = 0.f; 
+        m_finished = false; 
+        m_speed = 1.f;
         apply();
     }
 

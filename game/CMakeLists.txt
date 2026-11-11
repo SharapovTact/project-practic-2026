@@ -9,13 +9,14 @@ find_package(SFML 3 COMPONENTS Graphics Window System Audio REQUIRED)
 
 add_executable(app
     main.cpp
-    src/config.hpp
     src/player/player.cpp
+    src/player/player-update.cpp
+    src/player/player-collision.cpp
     src/level/level.cpp
     src/level/level-textures.cpp
-    src/menu/main-menu.cpp
     src/camera/camera.cpp
     src/state-manager/state-manager.cpp
+    src/menu/main-menu.cpp
     src/hud/hud.cpp
     src/audio/audio.cpp
 )

@@ -5,6 +5,15 @@
 class Level;
 enum class TileType;
 
+constexpr sf::Vector2f HORIZONTAL_HITBOX = {100.f, 30.f};
+constexpr sf::Vector2f VERTICAL_HITBOX   = {30.f, 100.f};
+constexpr sf::Vector2f BIG_HITBOX        = {108.f, 108.f};
+
+enum class HitboxOrientation {
+    Horizontal,
+    Vertical
+};
+
 enum class PlayerState
 {
     UnderWater,
@@ -36,7 +45,10 @@ public:
     static void MoreOxygen(float deltaTime);
     static float GetOxygen();
 
+    HitboxOrientation GetHitboxOrientation() const { return m_hitboxOrientation; }
+
 private:
+    HitboxOrientation m_hitboxOrientation = HitboxOrientation::Horizontal;
     static float m_oxygen_percent;
 
     void draw(sf::RenderTarget& target, sf::RenderStates states) const override;
@@ -45,6 +57,9 @@ private:
     void UpdateSurface(float deltaTime, const Level& level);
     void UpdateRelax(float deltaTime, const Level& level);
     void UpdateDive(float deltaTime, const Level& level);
+    void SetVerticalCollision(const Level& level);
+    void SetHorizontalCollision(const Level& level);
+    bool CanChangeHitbox(const sf::FloatRect& newHitbox, const Level& level) const;
 
     void SetRightSprite(); 
     void SetLeftSprite(); 

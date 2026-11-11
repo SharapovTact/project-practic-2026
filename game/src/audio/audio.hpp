@@ -35,6 +35,7 @@ private:
     sf::Sound m_breath;
     sf::Sound m_oneShot;
 
+    int   m_loopVolumeDelayTicks = 0;
     Loop  m_currentLoop = Loop::None;
     float m_underwaterMix = 0.f;
     bool  m_paused = false;

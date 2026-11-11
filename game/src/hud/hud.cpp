@@ -162,7 +162,7 @@ void HUD::DrawOverlay(sf::RenderWindow& window)
             text = "Пауза";    
             break;
         case GameState::GameOver: 
-            text = "Утонул\nНажми пробел"; 
+            text = "Утонул\nНажми ESCAPE"; 
             break;
         case GameState::Win:      
             text = "Ты победил";   

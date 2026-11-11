@@ -15,7 +15,9 @@ LevelTextures levelTextures;
 MainMenu mainMenu(levelTextures);
 HUD hud;
 Level level(levelTextures);
-Player character; //Переделать хитбокс персонажа, чтобы мог касаться ногой дна
+Player character;
+// Переделать звуки, как будто песок в майне копаешь
+// Сделать вертикальный хитбокс, блокировать при колизии боков
 bool debugDraw = false;
 
 void Reset() {
@@ -61,16 +63,14 @@ int main()
                 }
                 if (keyPressed->code == sf::Keyboard::Key::Escape)
                 {
-                    if (StateManager::GetGameState() == GameState::Play) {
+                    const GameState gameState = StateManager::GetGameState();
+                    if (gameState == GameState::Play) {
                         StateManager::SetGameState(GameState::Pause);
                     }
-                    else if (StateManager::GetGameState() == GameState::Pause) {
+                    else if (gameState == GameState::Pause) {
                         StateManager::SetGameState(GameState::Play);
                     } 
-                }
-                if (keyPressed->code == sf::Keyboard::Key::Space) {
-                    const GameState s = StateManager::GetGameState();
-                    if (s == GameState::GameOver || s == GameState::Win) {
+                    if (gameState == GameState::GameOver || gameState == GameState::Win) {
                         Reset();
                     }
                 }
